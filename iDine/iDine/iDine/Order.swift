@@ -35,4 +35,12 @@ class Order: BindableObject {
             items.remove(at: index)
         }
     }
+    
+    func clear() {
+        items.removeAll()
+    }
+    
+    func delete(at offset: Int) {
+        items.remove(at: offset)
+    }
 }

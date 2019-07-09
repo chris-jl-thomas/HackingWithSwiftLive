@@ -57,11 +57,11 @@ struct CheckoutView : View {
             
             Section(header: Text("Total: $\(totalPrice, specifier: "%.2f")")) {
                 
-                Button(action: {
-                    self.showingPaymentAlert.toggle()
-                }) {
-                    Text("Confirm order")
-                }
+                    Button(action: {
+                        self.showingPaymentAlert.toggle()
+                    }) {
+                        Text("Confirm order")
+                    }
             }
         }
         .navigationBarTitle(Text("Payment"), displayMode: .inline)

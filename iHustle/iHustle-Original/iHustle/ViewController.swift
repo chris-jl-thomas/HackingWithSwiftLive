@@ -45,18 +45,24 @@ class ViewController: UITableViewController {
             cell.detailTextLabel?.text = "No outstanding goals"
         } else {
             let goals = outstandingGoals.map { $0.name }
-            cell.detailTextLabel?.text = "Outstanding goals: \(goals.joined(separator: ", "))"
+            cell.detailTextLabel?.text = "Outstanding goals: \(ListFormatter.localizedString(byJoining: goals))"
         }
 
         return cell
     }
 
     func edit(_ group: Group) {
-        guard let vc = storyboard?.instantiateViewController(withIdentifier: "EditGroup") as? EditGroupViewController else {
-            fatalError("Failed to load EditGroupViewController from storyboard.")
+//        guard let vc = storyboard?.instantiateViewController(withIdentifier: "EditGroup") as? EditGroupViewController else {
+//            fatalError("Failed to load EditGroupViewController from storyboard.")
+//        }
+//
+//        vc.group = group
+        
+        guard let vc = storyboard?.instantiateViewController(identifier: "EditGroup", creator: { coder in
+            EditGroupViewController(coder: coder, group: group)
+        }) else {
+            fatalError("Uhoh spagehtti oh")
         }
-
-        vc.group = group
 
         navigationController?.pushViewController(vc, animated: true)
     }

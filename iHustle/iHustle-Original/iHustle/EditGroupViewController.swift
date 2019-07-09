@@ -9,14 +9,24 @@
 import UIKit
 
 class EditGroupViewController: UITableViewController {
-    var group: Group!
+    
+    var group: Group
+    
+    required init?(coder: NSCoder) {
+        fatalError("Do not instantiate this way")
+    }
+    
+    init?(coder: NSCoder, group: Group) {
+        self.group = group
+        super.init(coder: coder)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         title = group.name
 
-        let rename = UIBarButtonItem(image: UIImage(named: "edit"), style: .plain, target: self, action: #selector(renameGroup))
+        let rename = UIBarButtonItem(image: UIImage(systemName: "doc"), style: .plain, target: self, action: #selector(renameGroup))
         let add = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addGoal))
         navigationItem.rightBarButtonItems = [add, rename]
 
@@ -40,7 +50,11 @@ class EditGroupViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         if group.goals.count > 0 {
-            return "Created: \(group.created)"
+            let formatter = RelativeDateTimeFormatter()
+            formatter.unitsStyle = .full
+            
+            let formattedDate = formatter.localizedString(for: group.created, relativeTo: Date())
+            return "Created: \(formattedDate)"
         } else {
             return "No goals in this group"
         }

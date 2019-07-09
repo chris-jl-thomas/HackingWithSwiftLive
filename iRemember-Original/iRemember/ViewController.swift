@@ -6,6 +6,7 @@
 //  Copyright © 2019 Hacking with Swift. All rights reserved.
 //
 
+import NaturalLanguage
 import UIKit
 import Vision
 import VisionKit
@@ -96,6 +97,24 @@ class ViewController: UIViewController, VNDocumentCameraViewControllerDelegate {
     func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
         dismiss(animated: true)
         DispatchQueue.global(qos: .userInitiated).async {
+            
+            let request = VNRecognizeTextRequest()
+            let requests = [request]
+            
+            for i in 0 ..< scan.pageCount {
+                let pageImage = scan.imageOfPage(at: i)
+                guard let imageData = pageImage.pngData() else { continue }
+                
+                let handler = VNImageRequestHandler(data: imageData)
+                try? handler.perform(requests)
+                
+                guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                    fatalError("Received invalid observations")
+                }
+                
+                self.parse(observations, for: imageData)
+            }
+            
             if scan.pageCount > 0 {
                 DispatchQueue.main.async {
                     self.saveData()
@@ -110,6 +129,18 @@ class ViewController: UIViewController, VNDocumentCameraViewControllerDelegate {
     }
     
     func parse(_ observations: [VNRecognizedTextObservation], for imageData: Data) {
+        var pageText = ""
+        for observation in observations {
+            guard let bestCandidate = observation.topCandidates(1).first else { continue }
+            pageText += "\(bestCandidate.string) "
+        }
         
+        let tagger = NLTagger(tagSchemes: [.sentimentScore])
+        tagger.string = pageText
+        let (sentiment, _) = tagger.tag(at: pageText.startIndex, unit: .paragraph, scheme: .sentimentScore)
+        let document = ScannedDocument(text: pageText, sentiment: sentiment)
+        try? imageData.write(to: document.url)
+        documents.append(document)
+        print(document)
     }
 }

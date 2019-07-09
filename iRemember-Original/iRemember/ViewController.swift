@@ -7,8 +7,11 @@
 //
 
 import UIKit
+import Vision
+import VisionKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, VNDocumentCameraViewControllerDelegate {
+    
     enum Section {
         case main
     }
@@ -77,10 +80,36 @@ class ViewController: UIViewController {
     }
 
     @objc func scanDocument() {
-
+        let vc = VNDocumentCameraViewController()
+        vc.delegate = self
+        present(vc, animated: true)
     }
 
     @objc func changeLayout() {
         collectionView.setCollectionViewLayout(createBasicLayout(), animated: true)
+    }
+    
+    func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
+        dismiss(animated: true)
+    }
+    
+    func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
+        dismiss(animated: true)
+        DispatchQueue.global(qos: .userInitiated).async {
+            if scan.pageCount > 0 {
+                DispatchQueue.main.async {
+                    self.saveData()
+                    self.reloadData(animated: true)
+                }
+            }
+        }
+    }
+    
+    func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
+        //
+    }
+    
+    func parse(_ observations: [VNRecognizedTextObservation], for imageData: Data) {
+        
     }
 }

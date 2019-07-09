@@ -11,11 +11,15 @@ import SwiftUI
 struct OrderView : View {
     @EnvironmentObject var order: Order
     
+    var clearEnabled: Bool {
+        !order.items.isEmpty
+    }
+    
     func deleteOrderItem(at offsets: IndexSet) {
+        
         if let first = offsets.first {
             order.delete(at: first)
         }
-        
     }
     
     var body: some View {
@@ -35,7 +39,7 @@ struct OrderView : View {
                     NavigationLink(destination: CheckoutView().environmentObject(order)) {
                         Text("Place order")
                     }
-                }
+                }.disabled(order.items.isEmpty)
                 
                 Section {
                     
@@ -43,12 +47,13 @@ struct OrderView : View {
                         self.order.clear()
                     }) {
                         Text("Clear order")
-                            .color(.red)
-                    }
+                            .color(clearEnabled ? .red : .gray)
+                    }.disabled(order.items.isEmpty)
                 }
             }
             .navigationBarTitle(Text("Order"))
                 .listStyle(.grouped)
+            .navigationBarItems(trailing: EditButton())
         }
     }
 }

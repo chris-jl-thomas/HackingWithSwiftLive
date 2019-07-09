@@ -16,7 +16,7 @@ struct CheckoutView : View {
     @State var paymentType = 0
     
     var body: some View {
-        VStack {
+        Form {
             Section {
                 Picker(selection: $paymentType, label: Text("How do you want to pay")) {
                     ForEach(0 ..< Self.paymentTypes.count) {

@@ -15,11 +15,12 @@ struct ItemRow: View {
     var body: some View {
         
         HStack {
+            
             Image(item.thumbnailImage)
             
             VStack(alignment: .leading) {
                 Text(item.name)
-                Text(String("$\(item.price)"))
+                Text("$\(item.price)")
             }
         }
     }

@@ -10,6 +10,8 @@ import SwiftUI
 
 struct ContentView : View {
     
+    @EnvironmentObject var order: Order
+    
     let menu = Bundle.main.decode([MenuSection].self, from: "menu.json")
     
     var body: some View {
@@ -18,13 +20,13 @@ struct ContentView : View {
                 ForEach(menu) { section in
                     Section(header: Text(section.name)) {
                         ForEach(section.items) { item in
-                            ItemRow(item: item)
+                            ItemRow(item: item).environmentObject(self.order)
                         }
                     }
                 }
             }
             .navigationBarTitle(Text("Menu"))
-                .listStyle(.grouped)
+            .listStyle(.grouped)
         }
     }
 }
@@ -32,7 +34,7 @@ struct ContentView : View {
 #if DEBUG
 struct ContentView_Previews : PreviewProvider {
     static var previews: some View {
-        ContentView()
+        ContentView().environmentObject(Order())
     }
 }
 #endif

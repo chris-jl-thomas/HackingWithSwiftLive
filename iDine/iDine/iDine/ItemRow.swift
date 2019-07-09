@@ -10,12 +10,14 @@ import SwiftUI
 
 struct ItemRow: View {
     
+    @EnvironmentObject var order: Order
+    
     static let colors: [String: Color]  = ["D": .purple, "G": .black, "N": .red, "S": .blue, "V": .green]
     
     var item: MenuItem
     
     var body: some View {
-        NavigationLink(destination: ItemDetail(item: item)) {
+        NavigationLink(destination: ItemDetail(item: item).environmentObject(order)) {
             HStack {
                 
                 Image(item.thumbnailImage)
@@ -41,14 +43,13 @@ struct ItemRow: View {
                 }
             }
         }
-        
     }
 }
 
 #if DEBUG
 struct ItemRow_Previews : PreviewProvider {
     static var previews: some View {
-        ItemRow(item: MenuItem.example)
+        ItemRow(item: MenuItem.example).environmentObject(Order())
     }
 }
 #endif

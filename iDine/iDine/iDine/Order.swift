@@ -6,10 +6,17 @@
 //  Copyright © 2019 Hacking with Swift. All rights reserved.
 //
 
+import Combine
 import SwiftUI
 
-class Order {
-    var items = [MenuItem]()
+class Order: BindableObject {
+    var items = [MenuItem]() {
+        didSet {
+            didChange.send()
+        }
+    }
+    
+    var didChange = PassthroughSubject<Void, Never>()
 
     var total: Int {
         if items.count > 0 {

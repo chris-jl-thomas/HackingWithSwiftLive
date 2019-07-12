@@ -12,7 +12,7 @@ import VisionKit
 import Vision
 import NaturalLanguage
 
-class ViewController: UIViewController, VNDocumentCameraViewControllerDelegate {
+class ViewController: UIViewController {
     enum Section {
         case main
     }
@@ -55,67 +55,7 @@ class ViewController: UIViewController, VNDocumentCameraViewControllerDelegate {
         let updateLayout = UIBarButtonItem(image: UIImage(systemName: "star"), style: .plain, target: self, action: #selector(changeLayout))
         navigationItem.rightBarButtonItems = [scan, updateLayout]
         
-        doCoreHapticsStuff()
-    }
-    
-    private func doCoreHapticsStuff() {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
-        do {
-            engine = try CHHapticEngine()
-            try engine?.start()
-        } catch {
-            print("there was an error starting the haptics engine: \(error.localizedDescription).")
-        }
-        
-        engine?.resetHandler = { [weak self] in
-            print("The engine reset")
-            
-            do {
-                try self?.engine?.start()
-            } catch {
-                print("Failed to restart the engine")
-            }
-        }
-    }
-    
-    func playSuccessHaptic() {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
-        
-        let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1)
-        let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1)
-        
-        let event = CHHapticEvent(eventType: .hapticContinuous, parameters: [intensity, sharpness], relativeTime: 0, duration: 0.5)
-        
-        do {
-            let pattern = try CHHapticPattern(events: [event], parameters: [])
-            let player = try engine?.makePlayer(with: pattern)
-            try player?.start(atTime: 0)
-        } catch {
-            print("Failed to play pattern: \(error.localizedDescription).")
-        }
-    }
-    
-    func playFailedHaptic() {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
-        
-        var events = [CHHapticEvent]()
-
-        for i in stride(from: 0, to: 1, by: 0.1) {
-            let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(1 - i))
-            let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(1 - i))
-            
-            let event = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: i, duration: 0.5)
-            events.append(event)
-        }
-        
-        
-        do {
-            let pattern = try CHHapticPattern(events: events, parameters: [])
-            let player = try engine?.makePlayer(with: pattern)
-            try player?.start(atTime: 0)
-        } catch {
-            print("Failed to play pattern: \(error.localizedDescription).")
-        }
+        initialiseCoreHapticsEngine()
     }
     
     func reloadData(animated: Bool) {
@@ -152,18 +92,11 @@ class ViewController: UIViewController, VNDocumentCameraViewControllerDelegate {
     @objc func changeLayout() {
         collectionView.setCollectionViewLayout(createBasicLayout(), animated: true)
     }
-    
-    func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
-        playFailedHaptic()
-        dismiss(animated: true)
-    }
-    
-    func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
-        print(error)
-        playFailedHaptic()
-        dismiss(animated: true)
-    }
-    
+}
+
+//MARK: VisionKit
+
+extension ViewController: VNDocumentCameraViewControllerDelegate {
     func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
         dismiss(animated: true)
         
@@ -196,7 +129,18 @@ class ViewController: UIViewController, VNDocumentCameraViewControllerDelegate {
         }
     }
     
-    func parse(_ observations: [VNRecognizedTextObservation], for imageData: Data) {
+    func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
+        playFailedHaptic()
+        dismiss(animated: true)
+    }
+    
+    func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
+        print(error)
+        playFailedHaptic()
+        dismiss(animated: true)
+    }
+    
+    private func parse(_ observations: [VNRecognizedTextObservation], for imageData: Data) {
         var pageText = ""
         
         for observation in observations {
@@ -214,5 +158,69 @@ class ViewController: UIViewController, VNDocumentCameraViewControllerDelegate {
         documents.append(document)
         
         print(document)
+    }
+}
+
+//MARK: CoreHaptics
+extension ViewController {
+    
+    private func initialiseCoreHapticsEngine() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        do {
+            engine = try CHHapticEngine()
+            try engine?.start()
+        } catch {
+            print("there was an error starting the haptics engine: \(error.localizedDescription).")
+        }
+        
+        engine?.resetHandler = { [weak self] in
+            print("The engine reset")
+            
+            do {
+                try self?.engine?.start()
+            } catch {
+                print("Failed to restart the engine")
+            }
+        }
+    }
+    
+    private func playSuccessHaptic() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        
+        let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1)
+        let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1)
+        
+        let event = CHHapticEvent(eventType: .hapticContinuous, parameters: [intensity, sharpness], relativeTime: 0, duration: 0.5)
+        
+        do {
+            let pattern = try CHHapticPattern(events: [event], parameters: [])
+            let player = try engine?.makePlayer(with: pattern)
+            try player?.start(atTime: 0)
+        } catch {
+            print("Failed to play pattern: \(error.localizedDescription).")
+        }
+    }
+    
+    private func playFailedHaptic() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        
+        var events = [CHHapticEvent]()
+        
+        for i in stride(from: 0, to: 1, by: 0.1) {
+            let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(1 - i))
+            let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(1 - i))
+            
+            let event = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: i, duration: 0.5)
+            events.append(event)
+        }
+        
+        
+        do {
+            let pattern = try CHHapticPattern(events: events, parameters: [])
+            let player = try engine?.makePlayer(with: pattern)
+            try player?.start(atTime: 0)
+        } catch {
+            print("Failed to play pattern: \(error.localizedDescription).")
+        }
     }
 }

@@ -17,21 +17,28 @@ class ViewController: UIViewController {
         case main
     }
     
+    enum LayoutInUse: Int {
+        case basic = 0
+        case compositional = 1
+        case advancedCompositional = 2
+    }
+    
     var documents = [ScannedDocument](from: "documents.json") ?? []
     var engine: CHHapticEngine?
-    
+    var selectedLayout: LayoutInUse = .basic
     var dataSource: UICollectionViewDiffableDataSource<Section, ScannedDocument>!
     var collectionView: UICollectionView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        title = "iRemember"
+        title = "iRemember - Basic Layout"
         
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: createBasicLayout())
         collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.backgroundColor = .systemBackground
         collectionView.register(ImageCell.self, forCellWithReuseIdentifier: ImageCell.reuseIdentifier)
+        collectionView.register(LabelBadge.self, forSupplementaryViewOfKind: LabelBadge.reuseIdentifier, withReuseIdentifier: LabelBadge.reuseIdentifier)
         
         dataSource = UICollectionViewDiffableDataSource<Section, ScannedDocument>(collectionView: collectionView) {
             (collectionView: UICollectionView, indexPath: IndexPath, model: ScannedDocument) -> UICollectionViewCell? in
@@ -45,6 +52,23 @@ class ViewController: UIViewController {
             cell.imageView.image = UIImage(contentsOfFile: filename.path)
             
             return cell
+        }
+        
+        dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
+            guard let document = self?.dataSource.itemIdentifier(for: indexPath) else { return nil }
+            guard let badgeView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: LabelBadge.reuseIdentifier, for: indexPath) as? LabelBadge else {
+                fatalError("Cannot create new supplementary view")
+            }
+            
+            if document.sentiment < -0.5 {
+                badgeView.label.text = "😡"
+            } else if document.sentiment > 0.5 {
+                badgeView.label.text = "😃"
+            } else {
+                badgeView.label.text = "😐"
+            }
+            
+            return badgeView
         }
         
         view.addSubview(collectionView)
@@ -90,7 +114,22 @@ class ViewController: UIViewController {
     }
     
     @objc func changeLayout() {
-        collectionView.setCollectionViewLayout(createCompositionalLayout(), animated: true)
+        let layout: UICollectionViewLayout
+        switch selectedLayout {
+        case .basic:
+            layout = createCompositionalLayout()
+            selectedLayout = .compositional
+            title = "iRemember - Compostitional Layout"
+        case .compositional:
+            layout = createAdvancedCompositionalLayout()
+            selectedLayout = .advancedCompositional
+            title = "iRemember - Advanced Compositional Layout"
+        case .advancedCompositional:
+            layout = createBasicLayout()
+            selectedLayout = .basic
+            title = "iRemember - Basic Layout"
+        }
+        collectionView.setCollectionViewLayout(layout, animated: true)
     }
 }
 
@@ -242,5 +281,37 @@ extension ViewController {
         
         let section = NSCollectionLayoutSection(group: group)
         return UICollectionViewCompositionalLayout(section: section)
+    }
+}
+
+//MARK: Advanced UICollectionViewCompositionalLayout
+
+extension ViewController {
+    func createAdvancedCompositionalLayout() -> UICollectionViewLayout {
+        return UICollectionViewCompositionalLayout { sectionIndex, layoutEnvironment in
+            let badgeAnchor = NSCollectionLayoutAnchor(edges: [.top, .trailing])
+            let badgeSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.25), heightDimension:     .fractionalHeight(0.25))
+            let badge = NSCollectionLayoutSupplementaryItem(layoutSize: badgeSize, elementKind: LabelBadge.reuseIdentifier, containerAnchor: badgeAnchor)
+            
+            
+            let squareSize: CGFloat
+            if layoutEnvironment.container.effectiveContentSize.width > 500 {
+                squareSize = 0.2
+            } else {
+                squareSize = 0.5
+            }
+            
+            let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(squareSize), heightDimension: .fractionalHeight(1))
+            
+            let item = NSCollectionLayoutItem(layoutSize: itemSize, supplementaryItems: [badge])
+            let spacing: CGFloat = 5
+            item.contentInsets = NSDirectionalEdgeInsets(top: spacing, leading: spacing, bottom: spacing, trailing: spacing)
+            
+            let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(squareSize))
+            let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+            
+            let section = NSCollectionLayoutSection(group: group)
+            return section
+        }
     }
 }

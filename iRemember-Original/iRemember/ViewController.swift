@@ -32,9 +32,24 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        title = "iRemember - Basic Layout"
+        let number = Int.random(in: 0 ... 2)
+        let layout: UICollectionViewLayout
+        switch LayoutInUse(rawValue: number) {
+        case .compositional:
+            layout = createCompositionalLayout()
+            selectedLayout = .compositional
+            title = "iRemember - Compostitional Layout"
+        case .advancedCompositional:
+            layout = createAdvancedCompositionalLayout()
+            selectedLayout = .advancedCompositional
+            title = "iRemember - Advanced Compositional Layout"
+        default:
+            layout = createBasicLayout()
+            selectedLayout = .basic
+            title = "iRemember - Basic Layout"
+        }
         
-        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: createBasicLayout())
+        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: layout)
         collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.backgroundColor = .systemBackground
         collectionView.register(ImageCell.self, forCellWithReuseIdentifier: ImageCell.reuseIdentifier)

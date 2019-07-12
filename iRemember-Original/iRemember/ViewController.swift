@@ -90,7 +90,7 @@ class ViewController: UIViewController {
     }
     
     @objc func changeLayout() {
-        collectionView.setCollectionViewLayout(createBasicLayout(), animated: true)
+        collectionView.setCollectionViewLayout(createCompositionalLayout(), animated: true)
     }
 }
 
@@ -222,5 +222,25 @@ extension ViewController {
         } catch {
             print("Failed to play pattern: \(error.localizedDescription).")
         }
+    }
+}
+
+
+//MARK: UICollectionViewCompositionalLayout
+
+extension ViewController {
+    func createCompositionalLayout() -> UICollectionViewLayout {
+        let squareSize: CGFloat = 0.5
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(squareSize), heightDimension: .fractionalHeight(1))
+        
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        let spacing: CGFloat = 5
+        item.contentInsets = NSDirectionalEdgeInsets(top: spacing, leading: spacing, bottom: spacing, trailing: spacing)
+        
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(squareSize))
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        return UICollectionViewCompositionalLayout(section: section)
     }
 }
